@@ -14,7 +14,25 @@ bool SSD1306_Try_Update();
 
 void SSD1306_Draw_String(int x, int y, const char* str);
 void SSD1306_Draw_Char(int x, int y, char c);
-
+void SSD1306_Draw_Line(uint8_t x0, uint8_t y0,
+                       uint8_t x1, uint8_t y1);
 void SSD1306_ClearArea(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1);
 
 extern I2C_HandleTypeDef* SSD1306_HI2C1;
+
+typedef struct {
+    float x;
+    float y;
+} screen_point_t;
+
+typedef struct {
+    float x;
+    float y;
+    float z;
+} vec3_t;
+
+bool project_vertex(
+    vec3_t world,
+    vec3_t camera,
+    float focal_length,
+    screen_point_t *out);

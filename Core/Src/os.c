@@ -5,7 +5,7 @@ void os_init(I2C_HandleTypeDef* hi2c)
 {   
     SSD1306_Init(hi2c);
 
-    SSD1306_Draw_String(0, 0, "CycleOS");
+    //SSD1306_Draw_String(0, 0, "CycleOS");
 
     SSD1306_Try_Update();
 

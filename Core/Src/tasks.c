@@ -48,9 +48,9 @@ void renderTicks(void) {
     for(;;) {
         char buf[16];
         snprintf(buf, sizeof(buf), "%lu", time_now());
-        SSD1306_ClearArea(0, 33, SSD1306_WIDTH, SSD1306_HEIGHT);
-        SSD1306_Draw_String(0, 33, buf);
-        SSD1306_Try_Update();
+        //SSD1306_ClearArea(0, 33, SSD1306_WIDTH, SSD1306_HEIGHT);
+        //SSD1306_Draw_String(0, 33, buf);
+        //SSD1306_Try_Update();
     }
 }
 
