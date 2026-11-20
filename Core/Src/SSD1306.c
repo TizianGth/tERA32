@@ -3,8 +3,6 @@
 
 #include "cube.h"
 
-#include <math.h>
-
 #define ADDRESS 0x3C << 1 // 7-bit address shifted for HAL functions
 
 cube_t cube;
@@ -14,33 +12,6 @@ uint8_t buffer[SSD1306_WIDTH * SSD1306_HEIGHT / 8];
 I2C_HandleTypeDef* SSD1306_HI2C1 = NULL;
 
 const GFXfont *font = &FreeSans10pt7b;
-
-#define NEAR_PLANE 0.01f
-bool project_vertex(
-    vec3_t world,
-    vec3_t camera,
-    float focal_length,
-    screen_point_t *out)
-{
-    // Weltkoordinaten -> Kamerakoordinaten
-    float x = world.x - camera.x;
-    float y = world.y - camera.y;
-    float z = world.z - camera.z;
-
-    // Punkt liegt auf oder hinter der Kamera
-    if (z <= NEAR_PLANE) {
-        return false;
-    }
-
-    // Perspektivische Projektion
-    out->x = (SSD1306_WIDTH / 2.0f)
-           + focal_length * x / z;
-
-    out->y = (SSD1306_HEIGHT / 2.0f)
-           - focal_length * y / z;
-
-    return true;
-}
 
 void SSD1306_Draw_String(int x, int y, const char* str)
 {
@@ -126,70 +97,6 @@ void SSD1306_Init(I2C_HandleTypeDef* hi2c)
   HAL_I2C_Master_Transmit(SSD1306_HI2C1, ADDRESS, init, sizeof(init), 100);
 
   init_cube(&cube, 20, 20, 0, 10);
-  
-
-  {
-    vec3_t camera = {
-        .x = 25.0f,
-        .y = 25.0f,
-        .z = -30.0f
-    };
-    float focal_length = 80.0f;
-    screen_point_t projected[8];
-    bool visible[8];
-
-    // Alle acht Vertices transformieren und projizieren
-    for (int i = 0; i < 8; i++) {
-        vec3_t world = {
-            .x = cube.vertices[i * 3],
-            .y = cube.vertices[i * 3 + 1],
-            .z = cube.vertices[i * 3 + 2]
-        };
-
-        visible[i] = project_vertex(
-            world,
-            camera,
-            focal_length,
-            &projected[i]
-        );
-    }
-
-    // Kanten zwischen den projizierten Vertices zeichnen
-    for (int i = 0; i < 12; i++) {
-        uint8_t a = cube_edges[i][0];
-        uint8_t b = cube_edges[i][1];
-
-        // Kante überspringen, wenn ein Endpunkt
-        // hinter der Kamera liegt
-        if (!visible[a] || !visible[b]) {
-            continue;
-        }
-
-        float x0 = projected[a].x;
-        float y0 = projected[a].y;
-        float x1 = projected[b].x;
-        float y1 = projected[b].y;
-
-        /*
-         * Linien außerhalb des Displays überspringen.
-         * Für einen Würfel, der das Display teilweise
-         * verlässt, wäre echtes Line-Clipping nötig.
-         */
-        if (x0 < 0 || x0 >= SSD1306_WIDTH ||
-            y0 < 0 || y0 >= SSD1306_HEIGHT ||
-            x1 < 0 || x1 >= SSD1306_WIDTH ||
-            y1 < 0 || y1 >= SSD1306_HEIGHT) {
-            continue;
-        }
-
-        SSD1306_Draw_Line(
-            (uint8_t)lroundf(x0),
-            (uint8_t)lroundf(y0),
-            (uint8_t)lroundf(x1),
-            (uint8_t)lroundf(y1)
-        );
-    }
-  }
 
   SSD1306_Try_Update();
 }

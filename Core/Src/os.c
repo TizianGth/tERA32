@@ -1,9 +1,13 @@
 #include <stdio.h>
 #include "os.h"
 
+#include "renderer.h"
+
 void os_init(I2C_HandleTypeDef* hi2c)
 {   
     SSD1306_Init(hi2c);
+
+    render();
 
     //SSD1306_Draw_String(0, 0, "CycleOS");
 

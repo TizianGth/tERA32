@@ -50,6 +50,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/tasks.c
     Core/Src/SSD1306.c
     Core/Src/cube.c
+    Core/Src/renderer.c
 )
 
 # Add include paths
