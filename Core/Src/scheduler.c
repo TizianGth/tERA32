@@ -6,16 +6,16 @@ uint32_t taskA_stack[DEFAULT_STACK_SIZE];
 uint32_t taskB_stack[DEFAULT_STACK_SIZE];
 uint32_t taskC_stack[DEFAULT_STACK_SIZE];
 
-uint32_t taskRenderTicks_stack[DEFAULT_STACK_SIZE];
+uint32_t taskRenderTicks_stack[1024];
 
 task_t tasks[] =
 {
-    {idle_stack, idle,   PRIORITY_IDLE,   0, 0, TASK_READY},
-    {taskA_stack, taskA, PRIORITY_NORMAL, 0, 0, TASK_READY},
-    {taskB_stack, taskB, PRIORITY_NORMAL, 0, 0, TASK_READY},
-    {taskC_stack, taskC, PRIORITY_NORMAL, 0, 0, TASK_READY},
+    {idle_stack, DEFAULT_STACK_SIZE, idle,   PRIORITY_IDLE,   0, 0, TASK_READY},
+    //{taskA_stack, taskA, PRIORITY_NORMAL, 0, 0, TASK_READY},
+    //{taskB_stack, taskB, PRIORITY_NORMAL, 0, 0, TASK_READY},
+    //{taskC_stack, taskC, PRIORITY_NORMAL, 0, 0, TASK_READY},
 
-    {taskRenderTicks_stack, renderTicks, PRIORITY_LOW, 0, 0, TASK_READY},
+    {taskRenderTicks_stack, 1024, renderTicks, PRIORITY_LOW, 0, 0, TASK_READY},
 };
 
 const size_t NUM_TASKS = sizeof(tasks) / sizeof(tasks[0]);

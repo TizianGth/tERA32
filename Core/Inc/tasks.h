@@ -19,6 +19,7 @@ typedef enum {
 typedef struct
 {
     uint32_t *sp;
+    uint32_t  stack_words;
     task_fn_t function;
     uint8_t priority;
 

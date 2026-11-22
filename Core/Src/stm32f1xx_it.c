@@ -82,16 +82,38 @@ void NMI_Handler(void)
 /**
   * @brief This function handles Hard fault interrupt.
   */
-void HardFault_Handler(void)
+//void HardFault_Handler(void)
+//{
+//  /* USER CODE BEGIN HardFault_IRQn 0 */
+//
+//  /* USER CODE END HardFault_IRQn 0 */
+//  while (1)
+//  {
+//    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
+//    /* USER CODE END W1_HardFault_IRQn 0 */
+//  }
+//}
+__attribute__((naked)) void HardFault_Handler(void)
 {
-  /* USER CODE BEGIN HardFault_IRQn 0 */
+    __asm volatile(
+        "tst  lr, #4      \n"
+        "ite  eq          \n"
+        "mrseq r0, msp    \n"
+        "mrsne r0, psp    \n"
+        "b    hardfault_c \n"
+    );
+}
 
-  /* USER CODE END HardFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
-    /* USER CODE END W1_HardFault_IRQn 0 */
-  }
+void hardfault_c(uint32_t *f)
+{
+    volatile uint32_t pc   = f[6];   // faulting instruction
+    volatile uint32_t lr   = f[5];
+    volatile uint32_t cfsr = SCB->CFSR;
+    volatile uint32_t hfsr = SCB->HFSR;
+    volatile uint32_t bfar = SCB->BFAR;
+    volatile uint32_t mmfar= SCB->MMFAR;
+    __BKPT(0);
+    for (;;);
 }
 
 /**
@@ -173,22 +195,23 @@ __attribute__((naked)) void PendSV_Handler(void)
 {
     __asm volatile(
         "MRS   r0, psp                    \n"
-        "CBZ   r0, 1f                     \n" // valid stack pointer to save?
+        "CBZ   r0, 1f                     \n"
         "STMDB r0!, {r4-r11}              \n"
         "LDR   r1, =current_task          \n"
         "LDR   r2, [r1]                   \n"
         "STR   r0, [r2]                   \n"
         "1:                               \n"
-        "PUSH  {lr}                       \n"   // save EXC_RETURN
+        "PUSH  {r3, lr}                   \n"   // 8-Byte-aligned
         "BL    update_sleeping_tasks      \n"
         "BL    pick_next_task             \n"
         "BL    update_current_task_time   \n"
-        "POP   {lr}                       \n"   // restore EXC_RETURN
+        "POP   {r3, lr}                   \n"
         "LDR   r1, =current_task          \n"
         "LDR   r2, [r1]                   \n"
         "LDR   r0, [r2]                   \n"
         "LDMIA r0!, {r4-r11}              \n"
         "MSR   psp, r0                    \n"
+        "LDR   lr, =0xFFFFFFFD            \n"   // Thread-Modus, PSP
         "ISB                              \n"
         "BX    lr                         \n"
     );

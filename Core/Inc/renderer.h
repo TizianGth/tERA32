@@ -23,6 +23,7 @@ typedef struct {
     float focal_length;
 } camera_t;
 
+void render_init();
 void render();
 
 void draw_line(vec2_t p0, vec2_t p1);

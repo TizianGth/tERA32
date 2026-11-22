@@ -3,6 +3,8 @@
 #include "os.h"
 #include <stdio.h>
 
+#include "renderer.h"
+
 // Tasks should NEVER return. 
 // TODO: add wraper to ensure never return
 
@@ -43,11 +45,17 @@ void taskC(void)
         task_sleep((100*8*2)-100);
     }
 }
-
+#include <math.h>
 void renderTicks(void) {
     for(;;) {
-        char buf[16];
-        snprintf(buf, sizeof(buf), "%lu", time_now());
+        //char buf[16];
+        //snprintf(buf, sizeof(buf), "%lu", time_now());
+        render();
+        camera.position.x += 2.0f;
+        if(camera.position.x > 140.0f) {
+            camera.position.x = -50.0f;
+        }
+        //task_sleep(10);
         //SSD1306_ClearArea(0, 33, SSD1306_WIDTH, SSD1306_HEIGHT);
         //SSD1306_Draw_String(0, 33, buf);
         //SSD1306_Try_Update();

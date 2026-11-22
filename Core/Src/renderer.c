@@ -4,19 +4,23 @@
 #include <math.h>
 
 camera_t camera = {
-    .position = {25.0f, 25.0f, -30.0f},
+    .position = {-30.0f, 25.0f, -30.0f},
     .focal_length = 80.0f
 };
 
+cube_t cubes[8];
+
+void render_init() {
+    for(int i = 0; i<8;i++) {
+        init_cube(&cubes[i], i*10, 10, 10, 10);
+    }
+}
+
 void render() 
 {
-
-    for(int j = 0; j<2;j++) {
+    SSD1306_ClearArea(0, 0, SSD1306_WIDTH, SSD1306_HEIGHT);
     for(int i = 0; i<8;i++) {
-        cube_t cube;
-        init_cube(&cube, i*4, 20+j*4, j*4, 4);
-        render_cube(&cube);
-    }
+        render_cube(&cubes[i]);
     }
 
     SSD1306_Try_Update();
@@ -48,13 +52,87 @@ bool project_vertex(
     return true;
 }
 
+#include <stdbool.h>
+
+#define CLIP_LEFT   1
+#define CLIP_RIGHT  2
+#define CLIP_TOP    4
+#define CLIP_BOTTOM 8
+
+static int Compute_OutCode(float x, float y)
+{
+    int code = 0;
+
+    if (x < 0)
+        code |= CLIP_LEFT;
+    else if (x >= SSD1306_WIDTH)
+        code |= CLIP_RIGHT;
+
+    if (y < 0)
+        code |= CLIP_TOP;
+    else if (y >= SSD1306_HEIGHT)
+        code |= CLIP_BOTTOM;
+
+    return code;
+}
+
+static bool Clip_Line(float *x0, float *y0,
+                      float *x1, float *y1)
+{
+    int code0 = Compute_OutCode(*x0, *y0);
+    int code1 = Compute_OutCode(*x1, *y1);
+
+    while (1) {
+        if (!(code0 | code1)) {
+            return true; 
+        }
+
+        if (code0 & code1) {
+            return false;
+        }
+
+        int code_out = code0 ? code0 : code1;
+
+        float x, y;
+
+        if (code_out & CLIP_TOP) {
+            y = 0;
+            x = *x0 + (*x1 - *x0) *
+                (y - *y0) / (*y1 - *y0);
+        }
+        else if (code_out & CLIP_BOTTOM) {
+            y = SSD1306_HEIGHT - 1;
+            x = *x0 + (*x1 - *x0) *
+                (y - *y0) / (*y1 - *y0);
+        }
+        else if (code_out & CLIP_RIGHT) {
+            x = SSD1306_WIDTH - 1;
+            y = *y0 + (*y1 - *y0) *
+                (x - *x0) / (*x1 - *x0);
+        }
+        else {
+            x = 0;
+            y = *y0 + (*y1 - *y0) *
+                (x - *x0) / (*x1 - *x0);
+        }
+
+        if (code_out == code0) {
+            *x0 = x;
+            *y0 = y;
+            code0 = Compute_OutCode(*x0, *y0);
+        } else {
+            *x1 = x;
+            *y1 = y;
+            code1 = Compute_OutCode(*x1, *y1);
+        }
+    }
+}
+
 void render_cube(cube_t* cube)
 {
     bool visible[8];
     vec2_t projected[8];
 
-
-    // Alle acht Vertices transformieren und projizieren
     for (int i = 0; i < 8; i++) {
         vec3_t world = {
             .x = cube->vertices[i * 3],
@@ -69,39 +147,28 @@ void render_cube(cube_t* cube)
         );
     }
 
-    // Kanten zwischen den projizierten Vertices zeichnen
-    for (int i = 0; i < 12; i++) {
-        uint8_t a = cube_edges[i][0];
-        uint8_t b = cube_edges[i][1];
+for (int i = 0; i < 12; i++) {
+    uint8_t a = cube_edges[i][0];
+    uint8_t b = cube_edges[i][1];
 
-        // Kante überspringen, wenn ein Endpunkt
-        // hinter der Kamera liegt
-        if (!visible[a] || !visible[b]) {
-            continue;
-        }
-
-        float x0 = projected[a].x;
-        float y0 = projected[a].y;
-        float x1 = projected[b].x;
-        float y1 = projected[b].y;
-
-        /*
-         * Linien außerhalb des Displays überspringen.
-         * Für einen Würfel, der das Display teilweise
-         * verlässt, wäre echtes Line-Clipping nötig.
-         */
-        if (x0 < 0 || x0 >= SSD1306_WIDTH ||
-            y0 < 0 || y0 >= SSD1306_HEIGHT ||
-            x1 < 0 || x1 >= SSD1306_WIDTH ||
-            y1 < 0 || y1 >= SSD1306_HEIGHT) {
-            continue;
-        }
-
-        SSD1306_Draw_Line(
-            (uint8_t)lroundf(x0),
-            (uint8_t)lroundf(y0),
-            (uint8_t)lroundf(x1),
-            (uint8_t)lroundf(y1)
-        );
+    if (!visible[a] || !visible[b]) {
+        continue;
     }
+
+    float x0 = projected[a].x;
+    float y0 = projected[a].y;
+    float x1 = projected[b].x;
+    float y1 = projected[b].y;
+
+    if (!Clip_Line(&x0, &y0, &x1, &y1)) {
+        continue;
+    }
+
+    SSD1306_Draw_Line(
+        (uint8_t)lroundf(x0),
+        (uint8_t)lroundf(y0),
+        (uint8_t)lroundf(x1),
+        (uint8_t)lroundf(y1)
+    );
+}
   }
